@@ -28,9 +28,9 @@ app.use(express.json());
 app.use(cors());
 
 //q use el import
-app.use("/api/book",book);
-app.use("/api/client",client);
-app.use("/api/vendor",vendor);
+app.use("/api/book", book);
+app.use("/api/client", client);
+app.use("/api/vendor", vendor);
 
 //escuchar el siguiente puerto
 //para hacer q una funcion acepte optro parametro

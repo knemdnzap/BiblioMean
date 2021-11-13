@@ -4,7 +4,12 @@ import client from "../controllers/client.js";
 const router = express.Router();
 
 //http://localhost:3001/api/client/registerClient
+
+//Regitrar
 router.post("/registerClient", client.registerClient);
+router.post("/login", client.login);
+
+//Obtener
 router.get("/listClient", client.listClient);
 
 //actualizar role
