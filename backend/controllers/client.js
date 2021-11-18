@@ -1,14 +1,15 @@
+//importa para mostrar de dodne viene
+import client from "../models/client.js";
+import role from "../models/role.js";
 //Para encriptar la contraseña
 import bcrypt from "bcrypt";
 //Para importar el JSON Web Token
 import jwt from "jsonwebtoken";
 //Libreria para las fechas encriptadas
 import moment from "moment";
-//importa para mostrar de dodne viene
-// 4 - Crear el proceso para registrar clientes (name, email, password, registerDate, dbStatus)
-import client from "../models/client.js";
+
 //llega de la vista request y el response es lo q sta fuyncion va a devolver
-//el response dice q va devovler
+//el response dice q va devolver
 const registerClient = async (req, res) => {
   //necesita saber si alguno es vacio o el nombre o la descrpcion como atributos vienene en el json
   if (!req.body.name || !req.body.email || !req.body.password)
@@ -20,20 +21,26 @@ const registerClient = async (req, res) => {
   //es como si estuviera en el compas o mongo llama metodos de alla
   //mongoose es mongo en backend
   // el esta buscando en la tabla o coleccion rol en el atributo name el que le llego de la vista
-  //el wait ba dodne hcieamos algo de una respuestas que fuera hacer algo
+  //el await va donde hicieramos algo de una respuestas que fuera hacer algo
   //el sale de nuestra margen a buscar si mongo esta o no esta  y el espera
-  //hace una query  haber si esta
-  const existingClient = await client.findOne({ name: req.body.name });
+  //hace una query a ver si esta
+  const existingClient = await client.findOne({ email: req.body.email });
   //si ya existe manda el error
-  if (existingClient) return res.status(400).send("The client already exist");
+  if (existingClient)
+    return res.status(400).send("The client already exist");
 
-  const hash = await bcrypt.hash(req.body.password, 10);
+  const passHash = await bcrypt.hash(req.body.password, 10);
+
+  const roleId = await role.findOne({ name: "user" });
+  if (!role)
+    return res.status(400).send({ message: "No role was assigned" });
 
   //sino exite crea el esquema
   const clientSchema = new client({
     name: req.body.name,
     email: req.body.email,
-    password: hash,
+    password: passHash,
+    roleId: roleId._id,
     dbStatus: true,
   });
 
@@ -41,12 +48,53 @@ const registerClient = async (req, res) => {
   //coloco el await para que pueda hacerlo
   //el commit tiene todo listo le confirmo con el push
   const result = await clientSchema.save();
+
+  try {
+    return res.status(200).json({
+      token: jwt.sign({
+        _id: result._id,
+        name: result.name,
+        roleId: result.roleId,
+        iat: moment().unix(),
+      },
+      process.env.SK_JWT
+      ),
+    });
+  } catch (e) {
+    return res.status(400).send({ message: "Login error" });
+  }
+};
+
+const registerAdminClient = async (req, res) => {
+  if (
+    !req.body.name ||
+    !req.body.email ||
+    !req.body.password ||
+    !req.body.roleId
+  )
+    return res.status(400).send({ message: "Incomplete data" });
+
+  const existingClient = await client.findOne({ email: req.body.email });
+  if (existingClient)
+    return res.status(400).send({ message: "The client is already registered" });
+
+  const passHash = await bcrypt.hash(req.body.password, 10);
+
+  const clientRegister = new client({
+    name: req.body.name,
+    email: req.body.email,
+    password: passHash,
+    roleId: req.body.roleId,
+    dbStatus: true,
+  });
+
+  const result = await clientRegister.save();
   return !result
     ? res.status(400).send({ message: "Failed to register client" })
     : res.status(200).send({ result });
 };
 
-//CONSULTA API GET
+// CONSULTA API GET
 //listar todos los client
 //funciones asincronas se pueden ejecutar multiples funciones en el tiempo
 const listClient = async (req, res) => {
@@ -70,9 +118,13 @@ const listClient = async (req, res) => {
 const updateClient = async (req, res) => {
   //ADMIN
   //no  deja estar vacios
-  if (!req.body.name || !req.body.email || !req.body.password)
+  if (!req.body.name || !req.body.email || !req.body.roleId)
     //400 hay un error algo salio mal no llegaron alguno de los datos
     return res.status(400).send({ message: "Incomplete data" });
+
+  const changeEmail = await client.findById({ _id: req.body._id });
+  if (req.body.email !== changeEmail.email)
+    return res.status(400).send({ message: "The email should never be changed" });
 
   let pass = ""
 
@@ -88,6 +140,7 @@ const updateClient = async (req, res) => {
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
+    roleId: req.body.roleId,
   });
 
   if (!existingClient)
@@ -99,6 +152,7 @@ const updateClient = async (req, res) => {
     name: req.body.name,
     email: req.body.email,
     password: pass,
+    roleId: req.body.roleId,
   });
 
   // si esta vacio error al editar el error
@@ -144,6 +198,7 @@ const login = async (req, res) => {
         {
           _id: clientLogin._id,
           name: clientLogin.name,
+          roleId: clientLogin.roleId,
           iat: moment().unix(),
         },
         process.env.SK_JWT
@@ -159,7 +214,9 @@ const login = async (req, res) => {
 //si es una funcion si lleva llaves
 export default {
   registerClient,
+  registerAdminClient,
   listClient,
+  findClient,
   updateClient,
   deleteClient,
   login,

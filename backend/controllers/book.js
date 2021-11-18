@@ -97,4 +97,4 @@ const deleteBook = async(req,res)=>{
 //con este deja publico
 //no hay geter and setter
 //si es una funcion si lleva llaves
-export default {registerBook, listBook, updateBook, deleteBook};
+export default { registerBook, listBook, updateBook, deleteBook };

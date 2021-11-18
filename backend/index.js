@@ -14,6 +14,7 @@ import dotenv from "dotenv";
 //trae la del controler y route
 import book from "./routes/book.js"
 import client from "./routes/client.js"
+import role from "./routes/role.js"
 import vendor from "./routes/vendor.js"
 
 dotenv.config();
@@ -30,6 +31,7 @@ app.use(cors());
 //q use el import
 app.use("/api/book", book);
 app.use("/api/client", client);
+app.use("/api/role", role);
 app.use("/api/vendor", vendor);
 
 //escuchar el siguiente puerto
