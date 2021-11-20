@@ -8,13 +8,13 @@ const router = express.Router();
 //http://localhost:3001/api/client/registerClient
 
 //Regitrar
-router.post("/registerClient", client.registerClient);
+router.post("/registerClient", auth, admin, client.registerClient);
 router.post("/registerAdminClient", auth, admin, client.registerAdminClient);
 router.post("/login", client.login);
 
 //Obtener
-router.get("/listClient", auth, client.listClient);
-router.get("/findUser", auth, client.findClient);
+router.get("/listClient", auth, admin, client.listClient);
+router.get("/findUser", auth, admin, client.findClient);
 
 //actualizar role
 router.put("/updateClient", auth, admin, client.updateClient);
